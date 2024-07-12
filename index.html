@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Faucet & More</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .spacer {
+            height: 50px; /* Adjust the height as needed */
+        }
+        .faucet-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .offers-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .offer-box {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: calc(33.33% - 20px);
+            min-width: 250px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .offer-box img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            margin: 1rem 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+        .error { color: #ff0000; }
+        .success { color: #4CAF50; }
+        .donation-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="spacer"></div>
+    <div class="faucet-container">
+        <h1>Free Crypto Faucet</h1>
+        <p>Enter your wallet address to receive free crypto!</p>
+        <input type="text" id="addressInput" placeholder="Enter your wallet address">
+        <button id="withdrawButton" onclick="requestWithdrawal()">Claim Crypto</button>
+        <p id="status"></p>
+    </div>
+
+    <div class="offers-container">
+        <div class="offer-box">
+            <img src="ledger.png" alt="Project Alpha">
+            <h2>Project Alpha</h2>
+            <p>Revolutionary DeFi platform changing the crypto landscape.</p>
+            <a href="#">Learn More</a>
+        </div>
+
+        <div class="offer-box">
+            <img src="beta.jpeg" alt="Beta Coin">
+            <h2>Beta Coin</h2>
+            <p>Next-gen privacy token for secure transactions.</p>
+            <a href="#">Explore Beta Coin</a>
+        </div>
+
+        <div class="offer-box">
+            <img src="ledger.png" alt="Gamma Chain">
+            <h2>Gamma Chain</h2>
+            <p>High-speed, low-fee blockchain for the future.</p>
+            <a href="#">Discover Gamma Chain</a>
+        </div>
+
+        <div class="offer-box">
+            <img src="beta.jpeg" alt="CryptoExchange">
+            <h2>CryptoExchange</h2>
+            <p>Get 10% off trading fees. Trade smarter, not harder.</p>
+            <a href="#">Claim Offer</a>
+        </div>
+
+        <div class="offer-box">
+            <img src="ledger.png" alt="WalletSecure">
+            <h2>WalletSecure</h2>
+            <p>3 months free premium security for your crypto assets.</p>
+            <a href="#">Secure Your Wallet</a>
+        </div>
+
+        <div class="offer-box">
+            <img src="social.jpeg" alt="Join Our Community">
+            <h2>Join Our Community</h2>
+            <p>Stay updated with the latest news and offers!</p>
+            <a href="https://twitter.com/your_twitter" target="_blank">Follow on Twitter</a>
+            <br>
+            <a href="https://t.me/your_telegram" target="_blank">Join Telegram</a>
+        </div>
+    </div>
+
+    <div class="donation-container">
+        <h2>Support Our Faucet</h2>
+        <p>If you enjoy using our crypto faucet, consider making a donation to help keep it running.</p>
+        <p>Wallet Address: <strong>0xYourDonationWalletAddress</strong></p>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000'; // Replace with your actual backend URL
+
+        function isValidEthereumAddress(address) {
+            return /^0x[a-fA-F0-9]{40}$/.test(address);
+        }
+
+        async function requestWithdrawal() {
+            const addressInput = document.getElementById('addressInput');
+            const withdrawButton = document.getElementById('withdrawButton');
+            const statusElement = document.getElementById('status');
+            const address = addressInput.value.trim();
+
+            if (!address || !isValidEthereumAddress(address)) {
+                updateStatus('Please enter a valid Ethereum wallet address.', 'error');
+                return;
+            }
+
+            updateStatus('Processing request...', '');
+            disableForm(true);
+
+            try {
+                // First, validate the IP
+                const ipValidation = await fetch(`${API_URL}/validate-ip`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: 'dummy-ip' }) // The actual IP will be determined by the server
+                });
+                const ipValidationResult = await ipValidation.json();
+
+                if (!ipValidationResult.allowed) {
+                    updateStatus('You have recently claimed from this faucet. Please try again later.', 'error');
+                    disableForm(false);
+                    return;
+                }
+
+                // If IP is valid, proceed with withdrawal
+                const withdrawalResponse = await fetch(`${API_URL}/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: address })
+                });
+                const withdrawalResult = await withdrawalResponse.json();
+
+                if (withdrawalResult.success) {
+                    updateStatus(`Success! Transaction hash: ${withdrawalResult.transactionHash}`, 'success');
+                } else {
+                    updateStatus('Withdrawal failed. Please try again later.', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('An error occurred. Please try again later.', 'error');
+            }
+
+            disableForm(false);
+        }
+
+        function updateStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = type;
+        }
+
+        function disableForm(disabled) {
+            document.getElementById('addressInput').disabled = disabled;
+            document.getElementById('withdrawButton').disabled = disabled;
+        }
+    </script>
+</body>
+</html>
