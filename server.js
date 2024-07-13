@@ -1,5 +1,5 @@
 const express = require('express');
-const { Web3 } = require('web3');
+const Web3 = require('web3'); // Correct import of Web3
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const Redis = require('ioredis');
@@ -11,7 +11,7 @@ const path = require('path');
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000; // Use PORT from environment variables if available, otherwise default to 3000
+const port = 3000;
 
 // Middleware
 app.use(cors());
@@ -21,7 +21,7 @@ app.use(bodyParser.json());
 const redis = new Redis(); // Assumes a local Redis instance. Adjust as needed.
 
 // Web3 setup
-const web3 = new Web3(process.env.ETHEREUM_NODE_URL); // Loaded from .env file
+const web3 = new Web3(process.env.ETHEREUM_NODE_URL); // Correct instantiation of web3
 
 // Load contract ABI
 const contractABIPath = path.join(__dirname, 'contractABI.json');
@@ -83,4 +83,5 @@ app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
 
-//REAL CONTRACT 0xd716E70f80723B3Bc667806c50A469c3997A9Dc5
+
+//REAL CONTRACT 0xd716E70f80723B3Bc667806c50A469c3997A9Dc5 
