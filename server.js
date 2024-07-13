@@ -1,5 +1,5 @@
 const express = require('express');
-const Web3 = require('web3'); // Correct import of Web3
+const Web3 = require('web3');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const Redis = require('ioredis');
@@ -17,11 +17,19 @@ const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+let redis;
+
 // Redis setup for IP tracking
-const redis = new Redis(); // Assumes a local Redis instance. Adjust as needed.
+if (process.env.NODE_ENV === 'production') {
+    // Connect to Redis server specified by REDIS_URL in production
+    redis = new Redis(process.env.REDIS_URL);
+} else {
+    // Use local Redis instance for development
+    redis = new Redis(); // Assumes Redis is running locally on default port
+}
 
 // Web3 setup
-const web3 = new Web3(process.env.ETHEREUM_NODE_URL); // Correct instantiation of web3
+const web3 = new Web3(process.env.ETHEREUM_NODE_URL); // Loaded from .env file
 
 // Load contract ABI
 const contractABIPath = path.join(__dirname, 'contractABI.json');
@@ -82,6 +90,7 @@ app.post('/withdraw', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
 
 
 //REAL CONTRACT 0xd716E70f80723B3Bc667806c50A469c3997A9Dc5 
