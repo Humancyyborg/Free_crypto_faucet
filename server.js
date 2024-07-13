@@ -11,7 +11,7 @@ const path = require('path');
 dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // Use PORT from environment variables if available, otherwise default to 3000
 
 // Middleware
 app.use(cors());
@@ -83,4 +83,4 @@ app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
 
-//REAL CONTRACT 0xd716E70f80723B3Bc667806c50A469c3997A9Dc5 
+//REAL CONTRACT 0xd716E70f80723B3Bc667806c50A469c3997A9Dc5
