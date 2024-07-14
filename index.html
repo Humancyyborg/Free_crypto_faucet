@@ -159,8 +159,8 @@
     </div>
 
     <script>
-        //const API_URL = 'http://localhost:3000'; // Replace with your actual backend URL
-        const API_URL = 'https://free-crypto-faucet.onrender.com'
+        const API_URL = 'http://localhost:3000'; // Replace with your actual backend URL
+        //const API_URL = 'https://free-crypto-faucet.onrender.com'
 
         function isValidEthereumAddress(address) {
             return /^0x[a-fA-F0-9]{40}$/.test(address);
@@ -181,12 +181,13 @@
             disableForm(true);
 
             try {
-                // First, validate the IP
+                // // First, validate the IP
+                
                 const ipValidation = await fetch(`${API_URL}/validate-ip`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ip: 'dummy-ip' }) // The actual IP will be determined by the server
-                });
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({}) // Empty body, IP will be determined by the server
+                 });
                 const ipValidationResult = await ipValidation.json();
 
                 if (!ipValidationResult.allowed) {

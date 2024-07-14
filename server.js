@@ -1,3 +1,5 @@
+
+
 const express = require('express');
 const Web3 = require('web3');
 const bodyParser = require('body-parser');
@@ -7,67 +9,76 @@ const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
 
-// Load environment variables from .env file
 dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 let redis;
 
-// Redis setup for IP tracking
-if (process.env.NODE_ENV === 'production') {
-    // Connect to Redis server specified by REDIS_URL in production
-    redis = new Redis(process.env.REDIS_URL);
-} else {
-    // Use local Redis instance for development
-    redis = new Redis(); // Assumes Redis is running locally on default port
+// Check for required environment variables
+const requiredEnvVars = ['ETHEREUM_NODE_URL', 'CONTRACT_ADDRESS', 'PRIVATE_KEY', 'REDIS_URL'];
+for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+        console.error(`Error: ${envVar} is not set in the environment variables.`);
+        process.exit(1);
+    }
 }
 
-// Web3 setup
-const web3 = new Web3(process.env.ETHEREUM_NODE_URL); // Loaded from .env file
+// Redis setup
+if (process.env.NODE_ENV === 'production') {
+    redis = new Redis(process.env.REDIS_URL);
+} else {
+    redis = new Redis();
+}
 
-// Load contract ABI
+redis.on('error', (error) => {
+    console.error('Redis connection error:', error);
+});
+
+// Web3 setup
+const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
+
 const contractABIPath = path.join(__dirname, 'contractABI.json');
 const contractABI = JSON.parse(fs.readFileSync(contractABIPath, 'utf8'));
 
-const contractAddress = process.env.CONTRACT_ADDRESS; // Loaded from .env file
+const contractAddress = process.env.CONTRACT_ADDRESS;
 const contract = new web3.eth.Contract(contractABI, contractAddress);
 
-// Owner's account (Be extremely careful with private keys!)
-const ownerPrivateKey = process.env.PRIVATE_KEY; // Loaded from .env file
+const ownerPrivateKey = process.env.PRIVATE_KEY;
 const ownerAccount = web3.eth.accounts.privateKeyToAccount(ownerPrivateKey);
 web3.eth.accounts.wallet.add(ownerAccount);
 
 // IP validation endpoint
 app.post('/validate-ip', async (req, res) => {
-    const { ip } = req.body;
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log('Received IP validation request from:', ip);
     
     try {
         const lastWithdrawal = await redis.get(`lastWithdrawal:${ip}`);
         const now = Date.now();
         
         if (lastWithdrawal && now - parseInt(lastWithdrawal) < 24 * 60 * 60 * 1000) {
-            // Less than 24 hours since last withdrawal
+            console.log(`IP ${ip} not allowed: recent withdrawal`);
             res.json({ allowed: false });
         } else {
-            // Allow withdrawal and update timestamp
             await redis.set(`lastWithdrawal:${ip}`, now);
+            console.log(`IP ${ip} allowed for withdrawal`);
             res.json({ allowed: true });
         }
     } catch (error) {
         console.error('Error validating IP:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
 // Withdrawal endpoint
 app.post('/withdraw', async (req, res) => {
     const { address } = req.body;
+    console.log('Received withdrawal request for address:', address);
     
     try {
         const gasPrice = await web3.eth.getGasPrice();
@@ -79,18 +90,14 @@ app.post('/withdraw', async (req, res) => {
             gasPrice: gasPrice
         });
         
+        console.log('Withdrawal successful. Transaction hash:', tx.transactionHash);
         res.json({ success: true, transactionHash: tx.transactionHash });
     } catch (error) {
         console.error('Error processing withdrawal:', error);
-        res.status(500).json({ error: 'Withdrawal failed' });
+        res.status(500).json({ error: 'Withdrawal failed', details: error.message });
     }
 });
 
-// Start the server
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
-
-
-
-//REAL CONTRACT 0xd716E70f80723B3Bc667806c50A469c3997A9Dc5 
